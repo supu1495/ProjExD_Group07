@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
-    引数：こうかとんや爆弾，ビームなどのRect
+    引数：こうかとんなどのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     画面下では跳ね返らない
     """
@@ -65,15 +65,13 @@ class Bord(pg.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-class Bomb(pg.sprite.Sprite):
+class Bird(pg.sprite.Sprite):
     """
-    爆弾に関するクラス
+    こうかとんに関するクラス
     """
     def __init__(self):
         """
-        引数に基づき爆弾円Surfaceを生成する
-        引数1 color：爆弾円の色タプル
-        引数2 rad：爆弾円の半径
+        こうかとんSurfaceを生成する
         """
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9)
@@ -83,8 +81,7 @@ class Bomb(pg.sprite.Sprite):
 
     def update(self):
         """
-        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
-        引数 screen：画面Surface
+        こうかとんを速度ベクトルself.vx, self.vyに基づき移動させる
         """
         yoko, tate = check_bound(self.rect)
         if not yoko:
@@ -93,67 +90,72 @@ class Bomb(pg.sprite.Sprite):
             self.vy *= -1
         self.rect.move_ip(self.vx, self.vy)
 
-class Score:
-    """
-    スコアについてのクラス
-    """
-    def __init__(self):
-        self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
-        self.color = (0, 0, 255)
-        self.score = 0
-        self.image = self.fonto.render(str(self.score), 0, self.color)
-        self.rect = self.image.get_rect()
-        self.rect.center = (100, HEIGHT-50)       
-    def update(self):
-        """
-        現在のスコアを描画するメソッド
-        """
-        self.image = self.fonto.render(str(self.score), 0, self.color)
 
-class Explosin(pg.sprite.Sprite):
-    """
-    爆発エフェクトの為のクラス
-    """
-    def __init__(self, obj:"Bomb", life: int):
-        super().__init__()
-        img = pg.image.load(f"fig/explosion.gif")
-        self.imgs = [img, pg.transform.flip(img, 1, 1)]
-        self.image = self.imgs[0]
-        self.rect = self.image.get_rect(center=obj.rect.center)
-        self.life = life
+# class Score:
+#     """
+#     スコアについてのクラス
+#     """
+#     def __init__(self):
+#         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
+#         self.color = (0, 0, 255)
+#         self.score = 0
+#         self.image = self.fonto.render(str(self.score), 0, self.color)
+#         self.rect = self.image.get_rect()
+#         self.rect.center = (100, HEIGHT-50)       
+#     def update(self):
+#         """
+#         現在のスコアを描画するメソッド
+#         """
+#         self.image = self.fonto.render(str(self.score), 0, self.color)
 
-    def update(self):
-        """
-        爆発経過時間のメソッド
-        """
-        self.life -= 1
-        self.image = self.imgs[self.life // 10 % 2]
-        if self.life < 0:
-            self.kill()
+# class Explosin(pg.sprite.Sprite):
+#     """
+#     爆発エフェクトの為のクラス
+#     """
+#     def __init__(self, obj:"Bird", life: int):
+#         super().__init__()
+#         img = pg.image.load(f"fig/explosion.gif")
+#         self.imgs = [img, pg.transform.flip(img, 1, 1)]
+#         self.image = self.imgs[0]
+#         self.rect = self.image.get_rect(center=obj.rect.center)
+#         self.life = life
+
+#     def update(self):
+#         """
+#         爆発経過時間のメソッド
+#         """
+#         self.life -= 1
+#         self.image = self.imgs[self.life // 10 % 2]
+#         if self.life < 0:
+#             self.kill()
+
+#他の人用の未完成機能
+
+
 
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bord = Bord()
-    bombs = pg.sprite.Group()
-    bombs.add(Bomb())
+    birds = pg.sprite.Group()
+    birds.add(Bird())
     clock = pg.time.Clock()
     tmr = 0
-    score = Score()
+    # score = Score()
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
 
         screen.blit(bg_img, [0, 0])
-        for bomb in pg.sprite.spritecollide(bord, bombs, False):#バーとbombが衝突したとき
-            bomb.vy *= -1 #上に跳ね返す
+        for bird in pg.sprite.spritecollide(bord, birds, False):#バーとbirdが衝突したとき
+            bird.vy *= -1 #上に跳ね返す
         key_lst = pg.key.get_pressed()
         bord.update(key_lst, screen)
-        bombs.update()
-        bombs.draw(screen)
-        score.update()
+        birds.update()
+        birds.draw(screen)
+        # score.update()
         pg.display.update()
         tmr += 1
         clock.tick(50)
