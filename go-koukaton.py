@@ -19,7 +19,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
+    if obj_rct.top < 0: #or HEIGHT < obj_rct.bottom:
         tate = False
     return yoko, tate
 
@@ -39,14 +39,12 @@ class Bird(pg.sprite.Sprite):
         引数 xy：こうかとん画像の初期位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9)
-        img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
-
-        self.dire = (+1, 0)
-        self.image = img
+        self.image = pg.Surface((80, 20))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, 80, 20))
         self.rect = self.image.get_rect()
+        self.dire = (+1, 0)
         self.rect.center = xy
-        self.speed = 10
+        self.speed = 20
 
     # def change_img(self, num: int, screen: pg.Surface):
     #     """
@@ -113,7 +111,6 @@ class Bomb(pg.sprite.Sprite):
         """
         super().__init__()
         self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9)
-        self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
         self.vx, self.vy = +5, +5
@@ -128,6 +125,7 @@ class Bomb(pg.sprite.Sprite):
             self.vx *= -1
         if not tate:
             self.vy *= -1
+        
         self.rect.move_ip(self.vx, self.vy)
         # screen.blit(self.image, self.rect)
 
@@ -174,7 +172,7 @@ def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
-    bird = Bird((300, 200))
+    bird = Bird((WIDTH/2, HEIGHT-30))
     bombs = pg.sprite.Group()
     bombs.add(Bomb())
     clock = pg.time.Clock()
@@ -188,13 +186,15 @@ def main():
         screen.blit(bg_img, [0, 0])
         
         #if bomb is not None:
-        for bomb in bombs:
-            if bird.rect.colliderect(bomb.rect):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                # bird.change_img(8, screen)
-                pg.display.update()
-                time.sleep(1)
-                return
+        # for bomb in bombs:
+        for bomb in pg.sprite.spritecollide(bird, bombs, False):
+            bomb.vy *= -1
+            # if bird.rect.colliderect(bomb.rect):
+            #     # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
+            #     # bird.change_img(8, screen)
+            #     pg.display.update()
+            #     time.sleep(1)
+            #     return
       
             # for j, bomb in enumerate(bombs):
             #     for k, beam in enumerate(beams):
@@ -209,12 +209,12 @@ def main():
             #                 score.score += 1
             #     beams = [beam for beam in beams if beam is not None]
             #     bombs = [bomb for bomb in bombs if bomb is not None]
-
+        
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
         # for beam in beams:
         #     beam.update(screen)
-            
+        
         for bomb in bombs:
             bombs.update()
             bombs.draw(screen)
