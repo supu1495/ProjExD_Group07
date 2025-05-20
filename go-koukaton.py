@@ -177,6 +177,22 @@ class Explosin:
         """
         self.life -= 1
 
+class clear:
+    """
+    ブロックを全て壊した時のエフェクト
+    """
+    def __init__(self):
+        self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
+        self.color = (0, 0, 255)
+        self.cle = ("ブロック崩しクリアめでとう!")
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.image.set_alpha(128)
+    def update(self, screen: pg.Surface):
+        self.img = self.fonto.render(str(self.cle), 0, self.color)
+        screen.blit(self.img, self.rct)
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
@@ -189,6 +205,7 @@ def main():
     clock = pg.time.Clock()
     tmr = 0
     score = Score()
+    cle = clear()
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -204,6 +221,8 @@ def main():
             if bird.rct.colliderect(bomb.rct):
                 # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
                 bird.change_img(8, screen)
+            if ブロックが無くなったら:
+                cle.update(screen)
                 pg.display.update()
                 time.sleep(1)
                 return
