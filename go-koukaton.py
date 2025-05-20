@@ -7,7 +7,7 @@ import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
-NUM_OF_BOMBS = 5 # 爆弾の個数
+# NUM_OF_BOMBS = 5 # 爆弾の個数
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -37,23 +37,23 @@ class Bird:
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
     img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
-    imgs = {  # 0度から反時計回りに定義
-        (+5, 0): img,  # 右
-        (+5, -5): pg.transform.rotozoom(img, 45, 0.9),  # 右上
-        (0, -5): pg.transform.rotozoom(img, 90, 0.9),  # 上
-        (-5, -5): pg.transform.rotozoom(img0, -45, 0.9),  # 左上
-        (-5, 0): img0,  # 左
-        (-5, +5): pg.transform.rotozoom(img0, 45, 0.9),  # 左下
-        (0, +5): pg.transform.rotozoom(img, -90, 0.9),  # 下
-        (+5, +5): pg.transform.rotozoom(img, -45, 0.9),  # 右下
-    }
+    # imgs = {  # 0度から反時計回りに定義
+    #     (+5, 0): img,  # 右
+    #     (+5, -5): pg.transform.rotozoom(img, 45, 0.9),  # 右上
+    #     (0, -5): pg.transform.rotozoom(img, 90, 0.9),  # 上
+    #     (-5, -5): pg.transform.rotozoom(img0, -45, 0.9),  # 左上
+    #     (-5, 0): img0,  # 左
+    #     (-5, +5): pg.transform.rotozoom(img0, 45, 0.9),  # 左下
+    #     (0, +5): pg.transform.rotozoom(img, -90, 0.9),  # 下
+    #     (+5, +5): pg.transform.rotozoom(img, -45, 0.9),  # 右下
+    # }
 
     def __init__(self, xy: tuple[int, int]):
         """
         こうかとん画像Surfaceを生成する
         引数 xy：こうかとん画像の初期位置座標タプル
         """
-        self.img = __class__.imgs[(+5, 0)]
+        # self.img = __class__.imgs[(+5, 0)]
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
 
@@ -80,8 +80,8 @@ class Bird:
         self.rct.move_ip(sum_mv)
         if check_bound(self.rct) != (True, True):
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
-        if not (sum_mv[0] == 0 and sum_mv[1] == 0):
-            self.img = __class__.imgs[tuple(sum_mv)]
+        # if not (sum_mv[0] == 0 and sum_mv[1] == 0):
+        #     self.img = __class__.img[tuple(sum_mv)]
         screen.blit(self.img, self.rct)
 
 
@@ -185,7 +185,7 @@ def main():
     beam = None
     beams: list[Beam] = []
     #bomb = Bomb((255, 0, 0), 10)
-    bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
+    bombs = [Bomb((255, 0, 0), 10) for _ in range(5)]
     clock = pg.time.Clock()
     tmr = 0
     score = Score()
