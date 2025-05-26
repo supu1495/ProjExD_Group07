@@ -177,6 +177,22 @@ class Explosin:
         """
         self.life -= 1
 
+class Lose:
+    """
+    ゲームオーバー画面に関するクラス
+    """
+    def __init__(self):
+        self.bg_img = pg.transform.smoothscale(pg.image.load("fig/bg.jpeg"), (WIDTH, HEIGHT))
+        self.lose_img = pg.image.load("fig/sprGAMEOVER.png")
+        lose_w, lose_h = self.lose_img.get_size()
+        self.lose_x = (WIDTH - lose_w) // 2
+        self.lose_y = (HEIGHT - lose_h) // 2
+
+    def draw(self, screen: pg.Surface):
+        screen.blit(self.bg_img, (0, 0))
+        screen.blit(self.lose_img, (self.lose_x, self.lose_y))
+        
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
@@ -184,52 +200,81 @@ def main():
     bird = Bird((300, 200))
     beam = None
     beams: list[Beam] = []
-    #bomb = Bomb((255, 0, 0), 10)
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
     clock = pg.time.Clock()
     tmr = 0
     score = Score()
+    y = 20
+
+    gameover = False
+    gameover_start = 0
+    lose_screen = None
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                # スペースキー押下でBeamクラスのインスタンス生成
+            if not gameover and event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beam = Beam(bird)          
-                beams.append(beam) #ビームをリストに追加  
-        screen.blit(bg_img, [0, 0])
-        
-        #if bomb is not None:
-        for bomb in bombs:
-            if bird.rct.colliderect(bomb.rct):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                bird.change_img(8, screen)
-                pg.display.update()
-                time.sleep(1)
-                return
-      
+                beams.append(beam)
+
+        if not gameover: 
+            screen.blit(bg_img, [0, 0])
+
+            # 爆弾とこうかとんの衝突判定
+            for bomb in bombs:
+                if bird.rct.colliderect(bomb.rct):
+                    bird.change_img(8, screen)
+                    pg.display.update()
+                    gameover = True
+                    gameover_start = pg.time.get_ticks()
+                    break
+
+            # ビームと爆弾の衝突判定
             for j, bomb in enumerate(bombs):
                 for k, beam in enumerate(beams):
                     if beam is not None:
-                    #if bomb is not None:
                         if check_bound(beam.rct) != (True, True):
                             beams[k] = None
-                        if beam.rct.colliderect(bomb.rct): #ビームと爆弾の衝突判定
-                            beams[k] = None #ビームを消す
-                            bombs[j] = None #爆弾を消す
+                        if beam.rct.colliderect(bomb.rct):
+                            beams[k] = None
+                            bombs[j] = None
                             bird.change_img(6, screen)
                             score.score += 1
                 beams = [beam for beam in beams if beam is not None]
                 bombs = [bomb for bomb in bombs if bomb is not None]
 
-        key_lst = pg.key.get_pressed()
-        bird.update(key_lst, screen)
-        for beam in beams:
-            beam.update(screen)
-            
-        for bomb in bombs:
-            bomb.update(screen)
-        score.update(screen)
+            # テスト画像生成（青い物体）
+            test_img = pg.draw.rect(screen, (0, 0, 255), (50, y, 10, 10))
+            y += 10
+            # GameOver判定時
+            if (test_img.bottom >= HEIGHT):
+                gameover = True
+                gameover_start = pg.time.get_ticks()
+                lose_screen = Lose()  # 一度だけ生成
+
+            key_lst = pg.key.get_pressed()
+            bird.update(key_lst, screen)
+            for beam in beams:
+                beam.update(screen)
+            for bomb in bombs:
+                bomb.update(screen)
+            score.update(screen)
+        # GameOver中
+        else:
+            # GameOver画面を3秒間表示し続ける
+            if lose_screen is not None:
+                lose_screen.draw(screen)
+            pg.display.update()
+            # Rキーを押すまで待機
+            for event in pg.event.get():
+                if event.type == pg.KEYDOWN and event.key == pg.K_r:
+                    # gameover = False
+                    return
+                if event.type == pg.QUIT:
+                    return
+            clock.tick(50)
+
         pg.display.update()
         tmr += 1
         clock.tick(50)
