@@ -107,8 +107,8 @@ class BlockGroup(pg.sprite.Group):
         ブロックを生成する
         """
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
-        for y in range(1):  # 5行
-            for x in range(1):
+        for y in range(6):  # 5行
+            for x in range(13):
                 color = colors[y % len(colors)]
                 block = Block(x * 85, y * 35 + 50, color)
                 self.add(block)
