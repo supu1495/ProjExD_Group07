@@ -11,14 +11,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
-    引数：こうかとんや爆弾，ビームなどのRect
+    引数：こうかとんなどのRect
     戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
     画面下では跳ね返らない
     """
     yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    if obj_rct.top < 0:
+    if obj_rct.top < 0: #画面下は飛び出る
         tate = False
     return yoko, tate
 
@@ -40,11 +40,11 @@ class Bord(pg.sprite.Sprite):
         """
         super().__init__()
         # 画像を用意
-        self.image = pg.Surface((80, 20))
+        self.image = pg.Surface((80, 20)) # 操作バーを作成
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, 80, 20))
         self.rect = self.image.get_rect()
         self.dire = (+1, 0)
-        self.rect.center = (WIDTH / 2, HEIGHT - 30)
+        self.rect.center = (WIDTH / 2, HEIGHT - 30) # 中央下に配置
         self.speed = 20
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
@@ -62,6 +62,7 @@ class Bord(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.rect.move_ip(-sum_mv[0], -sum_mv[1])
         screen.blit(self.image, self.rect)
+
 
 
 # 個々のブロッククラス
@@ -120,6 +121,30 @@ class BlockGroup(pg.sprite.Group):
             return True
         return False
 
+class Ball(pg.sprite.Sprite):
+    """
+    こうかとんボールに関するクラス
+    """
+    def __init__(self):
+        """
+        こうかとんSurfaceを生成する
+        """
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9) #画像呼び出し
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH/2, HEIGHT-60) #バー上を初期位置に
+        self.vx, self.vy = +5, +5
+
+    def update(self):
+        """
+        こうかとんを速度ベクトルself.vx, self.vyに基づき移動させる
+        """
+        yoko, tate = check_bound(self.rect)
+        if not yoko:
+            self.vx *= -1
+        if not tate:
+            self.vy *= -1
+        self.rect.move_ip(self.vx, self.vy)
 
 class Clear:
     """
@@ -144,7 +169,11 @@ def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg")
+
+    bord = Bord()
     blocks = BlockGroup()
+    balls = pg.sprite.Group()
+    balls.add(Ball())
     clear = Clear()
     clock = pg.time.Clock()
     tmr = 0
@@ -158,6 +187,9 @@ def main():
 
         # 背景の描画
         screen.blit(bg_img, (0, 0))
+    
+        for bird in pg.sprite.spritecollide(bord, birds, False): # バーとbirdが衝突したとき
+            bird.vy *= -1 #上に跳ね返す
 
         if not is_gameover and not is_clear:
             # ブロックの更新と当たり判定
@@ -176,6 +208,11 @@ def main():
             game_over_font = pg.font.SysFont("hgp創英角ポップ体", 50)
             game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
             screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+
+        key_lst = pg.key.get_pressed()
+        bord.update(key_lst, screen)
+        birds.update()
+        birds.draw(screen)
 
         pg.display.update()
         tmr += 1
