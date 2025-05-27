@@ -1,9 +1,7 @@
 import os
-import random
 import sys
-import time
-import pygame as pg
 
+import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
@@ -29,6 +27,7 @@ class Bord(pg.sprite.Sprite):
     """
     ゲームキャラクター（操作バー）に関するクラス
     """
+
     delta = {  # 押下キーと移動量の辞書
         pg.K_LEFT: (-5, 0),
         pg.K_RIGHT: (+5, 0),
@@ -40,13 +39,13 @@ class Bord(pg.sprite.Sprite):
         引数 xy：操作バーの初期位置座標タプル
         """
         super().__init__()
+        # 画像を用意
         self.image = pg.Surface((80, 20))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, 80, 20))
         self.rect = self.image.get_rect()
         self.dire = (+1, 0)
-        self.rect.center = (WIDTH/2, HEIGHT-30)
+        self.rect.center = (WIDTH / 2, HEIGHT - 30)
         self.speed = 20
-
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -65,145 +64,119 @@ class Bord(pg.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-class Bomb(pg.sprite.Sprite):
+# 個々のブロッククラス
+class Block(pg.sprite.Sprite):
     """
-    爆弾に関するクラス
+    ブロックを表すクラス
     """
-    def __init__(self):
-        """
-        引数に基づき爆弾円Surfaceを生成する
-        引数1 color：爆弾円の色タプル
-        引数2 rad：爆弾円の半径
-        """
+
+    def __init__(self, x, y, color=(255, 0, 0)):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9)
+        self.image = pg.Surface((80, 30))
+        self.image.fill(color)
         self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH/2, HEIGHT-60)
-        self.vx, self.vy = +5, +5
+        self.rect.topleft = (x, y)
 
-    def update(self):
-        """
-        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
-        引数 screen：画面Surface
-        """
-        yoko, tate = check_bound(self.rect)
-        if not yoko:
-            self.vx *= -1
-        if not tate:
-            self.vy *= -1
-        self.rect.move_ip(self.vx, self.vy)
+    def update(self, screen: pg.Surface):
+        screen.blit(self.image, self.rect)
 
-class Score:
+
+# ブロックのグループを管理するクラス
+class BlockGroup(pg.sprite.Group):
     """
-    スコアについてのクラス
+    複数のブロックを管理するクラス
     """
+
     def __init__(self):
-        self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
-        self.color = (0, 0, 255)
-        self.score = 0
-        self.image = self.fonto.render(str(self.score), 0, self.color)
-        self.rect = self.image.get_rect()
-        self.rect.center = (100, HEIGHT-50)       
-    def update(self):
-        """
-        現在のスコアを描画するメソッド
-        """
-        self.image = self.fonto.render(str(self.score), 0, self.color)
-
-class Explosin(pg.sprite.Sprite):
-    """
-    爆発エフェクトの為のクラス
-    """
-    def __init__(self, obj:"Bomb", life: int):
         super().__init__()
-        img = pg.image.load(f"fig/explosion.gif")
-        self.imgs = [img, pg.transform.flip(img, 1, 1)]
-        self.image = self.imgs[0]
-        self.rect = self.image.get_rect(center=obj.rect.center)
-        self.life = life
+        # インスタンス化したらブロックを生成
+        self.create_blocks()
 
-    def update(self):
+    def create_blocks(self):
         """
-        爆発経過時間のメソッド
+        ブロックを生成する
         """
-        self.life -= 1
-        self.image = self.imgs[self.life // 10 % 2]
-        if self.life < 0:
-            self.kill()
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
+        for y in range(6):  # 5行
+            for x in range(13):
+                color = colors[y % len(colors)]
+                block = Block(x * 85, y * 35 + 50, color)
+                self.add(block)
 
-class clear:
+    def update(self, screen: pg.Surface):
+        """
+        全てのブロックを更新する
+        """
+        for block in self.sprites():
+            block.update(screen)
+
+    def check_collision(self, _ball):
+        """
+        ボールとブロックの衝突を検出する
+        """
+        collision_list = pg.sprite.spritecollide(_ball, self, True)
+        if collision_list:
+            # 衝突したブロックを削除 と ボールのはね返し処理
+            return True
+        return False
+
+
+class Clear:
     """
     ブロックを全て壊した時のエフェクト
     """
+
     def __init__(self):
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
         self.color = (0, 0, 255)
-        self.cle = ("ブロック崩しクリアめでとう!")
+        self.cle = "ブロック崩しクリアめでとう!"
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
         self.image.set_alpha(128)
+
     def update(self, screen: pg.Surface):
         self.img = self.fonto.render(str(self.cle), 0, self.color)
         screen.blit(self.img, self.rct)
 
+
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
-    screen = pg.display.set_mode((WIDTH, HEIGHT))    
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg")
-    bord = Bord()
-    bombs = pg.sprite.Group()
-    bombs.add(Bomb())
+    blocks = BlockGroup()
+    clear = Clear()
     clock = pg.time.Clock()
     tmr = 0
-    score = Score()
-    cle = clear()
+    is_gameover = False
+    is_clear = False
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
-<<<<<<< HEAD
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                # スペースキー押下でBeamクラスのインスタンス生成
-                beam = Beam(bird)          
-                beams.append(beam) #ビームをリストに追加  
-        screen.blit(bg_img, [0, 0])
-        
-        #if bomb is not None:
-        for bomb in bombs:
-            if bird.rct.colliderect(bomb.rct):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                bird.change_img(8, screen)
-            if ブロックが無くなったら:
-                cle.update(screen)
-                pg.display.update()
-                time.sleep(1)
-                return
-      
-            for j, bomb in enumerate(bombs):
-                for k, beam in enumerate(beams):
-                    if beam is not None:
-                    #if bomb is not None:
-                        if check_bound(beam.rct) != (True, True):
-                            beams[k] = None
-                        if beam.rct.colliderect(bomb.rct): #ビームと爆弾の衝突判定
-                            beams[k] = None #ビームを消す
-                            bombs[j] = None #爆弾を消す
-                            bird.change_img(6, screen)
-                            score.score += 1
-                beams = [beam for beam in beams if beam is not None]
-                bombs = [bomb for bomb in bombs if bomb is not None]
-=======
->>>>>>> f06f8a2ef0abb98625c8b0a459c44423f969c119
 
-        screen.blit(bg_img, [0, 0])
-        for bomb in pg.sprite.spritecollide(bord, bombs, False):#バーとbombが衝突したとき
-            bomb.vy *= -1 #上に跳ね返す
-        key_lst = pg.key.get_pressed()
-        bord.update(key_lst, screen)
-        bombs.update()
-        bombs.draw(screen)
-        score.update()
+        # 背景の描画
+        screen.blit(bg_img, (0, 0))
+
+        if not is_gameover and not is_clear:
+            # ブロックの更新と当たり判定
+            blocks.update(screen)
+            # if blocks.check_collision():
+            #     score.update(screen, 10)
+            # else:
+            #     score.update(screen)
+
+            # ブロックが全て消えたらクリア
+            if len(blocks) == 0:
+                is_clear = True
+
+        # ゲームオーバー時の処理
+        if is_gameover:
+            game_over_font = pg.font.SysFont("hgp創英角ポップ体", 50)
+            game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
+            screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+
         pg.display.update()
         tmr += 1
         clock.tick(50)
