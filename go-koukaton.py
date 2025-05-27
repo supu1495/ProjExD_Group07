@@ -107,8 +107,8 @@ class BlockGroup(pg.sprite.Group):
         ブロックを生成する
         """
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
-        for y in range(6):  # 5行
-            for x in range(13):
+        for y in range(1):  # 5行
+            for x in range(1):
                 color = colors[y % len(colors)]
                 block = Block(x * 85, y * 35 + 50, color)
                 self.add(block)
@@ -199,17 +199,17 @@ class Clear:
     """
 
     def __init__(self):
-        self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
+        self.fonto = pg.font.SysFont("bizudgothic", 30)
         self.color = (0, 0, 255)
-        self.cle = "ブロック崩しクリアめでとう!"
+        self.cle = "ブロック崩しクリアおめでとう!"
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
         self.image.set_alpha(128)
 
     def update(self, screen: pg.Surface):
-        self.img = self.fonto.render(str(self.cle), 0, self.color)
-        screen.blit(self.img, self.rct)
+        self.img = self.fonto.render(self.cle, 0, self.color)
+        screen.blit(self.img, self.rect)
 
 
 class Score:
@@ -281,7 +281,7 @@ def main():
             if event.type == pg.QUIT:
                 return
 
-        if not is_gameover:
+        if not is_gameover and not is_clear:
             screen.blit(bg_img, [0, 0])
 
             # GameOver判定時
@@ -302,23 +302,19 @@ def main():
                     bord.accelerate()  # バーも加速
                     score.add_score(10)  # ブロック破壊時にスコア加算
 
-            if not is_gameover and not is_clear:
-                # ブロックの更新と当たり判定
-                blocks.update(screen)
-                # if blocks.check_collision():
-                #     score.update(screen, 10)
-                # else:
-                #     score.update(screen)
-
             # ブロックが全て消えたらクリア
             if len(blocks) == 0:
                 is_clear = True
 
             key_lst = pg.key.get_pressed()
             bord.update(key_lst, screen)
+            blocks.update(screen)
             balls.update()
             balls.draw(screen)
         # GameOver中
+        elif is_clear:
+            clear = Clear()
+            clear.update(screen)
         else:
             # GameOver画面を3秒間表示し続ける
             if lose_screen is not None:
