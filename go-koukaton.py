@@ -20,7 +20,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    if obj_rct.top < 0:
+    if obj_rct.top < 0: #画面下は飛び出る
         tate = False
     return yoko, tate
 
@@ -40,11 +40,11 @@ class Bord(pg.sprite.Sprite):
         引数 xy：操作バーの初期位置座標タプル
         """
         super().__init__()
-        self.image = pg.Surface((80, 20))
+        self.image = pg.Surface((80, 20)) #操作バーを作成
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, 80, 20))
         self.rect = self.image.get_rect()
         self.dire = (+1, 0)
-        self.rect.center = (WIDTH/2, HEIGHT-30)
+        self.rect.center = (WIDTH/2, HEIGHT-30) #中央下に配置
         self.speed = 20
 
 
@@ -67,16 +67,16 @@ class Bord(pg.sprite.Sprite):
 
 class Bird(pg.sprite.Sprite):
     """
-    こうかとんに関するクラス
+    こうかとんボールに関するクラス
     """
     def __init__(self):
         """
         こうかとんSurfaceを生成する
         """
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9)
+        self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9) #画像呼び出し
         self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH/2, HEIGHT-60)
+        self.rect.center = (WIDTH/2, HEIGHT-60) #バー上を初期位置に
         self.vx, self.vy = +5, +5
 
     def update(self):
