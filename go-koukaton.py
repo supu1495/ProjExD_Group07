@@ -162,39 +162,6 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
-<<<<<<< HEAD
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                # スペースキー押下でBeamクラスのインスタンス生成
-                beam = Beam(bird)          
-                beams.append(beam) #ビームをリストに追加  
-        screen.blit(bg_img, [0, 0])
-        
-        #if bomb is not None:
-        for bomb in bombs:
-            if bird.rct.colliderect(bomb.rct):
-                # ゲームオーバー時に，こうかとん画像を切り替え，1秒間表示させる
-                bird.change_img(8, screen)
-            if ブロックが無くなったら:
-                cle.update(screen)
-                pg.display.update()
-                time.sleep(1)
-                return
-      
-            for j, bomb in enumerate(bombs):
-                for k, beam in enumerate(beams):
-                    if beam is not None:
-                    #if bomb is not None:
-                        if check_bound(beam.rct) != (True, True):
-                            beams[k] = None
-                        if beam.rct.colliderect(bomb.rct): #ビームと爆弾の衝突判定
-                            beams[k] = None #ビームを消す
-                            bombs[j] = None #爆弾を消す
-                            bird.change_img(6, screen)
-                            score.score += 1
-                beams = [beam for beam in beams if beam is not None]
-                bombs = [bomb for bomb in bombs if bomb is not None]
-=======
->>>>>>> f06f8a2ef0abb98625c8b0a459c44423f969c119
 
         screen.blit(bg_img, [0, 0])
         for bomb in pg.sprite.spritecollide(bord, bombs, False):#バーとbombが衝突したとき
