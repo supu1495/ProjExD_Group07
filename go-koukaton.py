@@ -213,7 +213,7 @@ class Clear:
     def __init__(self):
         self.fonto = pg.font.SysFont("bizudgothic", 30)
         self.color = (0, 0, 255)
-        self.cle = "ブロック崩しクリアおめでとう!"
+        self.cle = "よくぞ、全てのブロックを崩せた！クリア本当におめでとう！！"
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
