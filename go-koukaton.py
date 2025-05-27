@@ -47,6 +47,13 @@ class Bord(pg.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT - 30)  # 中央下に配置
         self.speed = 20
 
+    def accelerate(self):
+        """
+        バーを少し加速させる
+        """
+        acceleration = 1.05  # 5%加速
+        self.speed *= acceleration
+
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
         押下キーに応じて操作バーを移動させる
@@ -58,9 +65,12 @@ class Bord(pg.sprite.Sprite):
             if key_lst[k]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
-        self.rect.move_ip(sum_mv)
+        # 加速された速度を反映
+        move_x = sum_mv[0] * (self.speed / 20)  # 基準速度20で正規化
+        move_y = sum_mv[1] * (self.speed / 20)
+        self.rect.move_ip(move_x, move_y)
         if check_bound(self.rect) != (True, True):
-            self.rect.move_ip(-sum_mv[0], -sum_mv[1])
+            self.rect.move_ip(-move_x, -move_y)
         screen.blit(self.image, self.rect)
 
 
@@ -120,6 +130,17 @@ class BlockGroup(pg.sprite.Group):
             return True
         return False
 
+    def check_collision(self, _ball):
+        """
+        ボールとブロックの衝突を検出し、ボールを加速させる
+        """
+        collision_list = pg.sprite.spritecollide(_ball, self, True)
+        if collision_list:
+            # ボールを少し加速
+            _ball.accelerate()
+            return True
+        return False
+
 
 class Ball(pg.sprite.Sprite):
     """
@@ -131,12 +152,22 @@ class Ball(pg.sprite.Sprite):
         こうかとんSurfaceを生成する
         """
         super().__init__()
-        self.image = pg.transform.rotozoom(
+        self.original_image = pg.transform.rotozoom(
             pg.image.load("fig/ball.png"), 0, 0.9
-        )  # 画像呼び出し
+        )  # 元画像を保存
+        self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT - 60)  # バー上を初期位置に
         self.vx, self.vy = +5, +5
+        self.angle = 0  # 回転角度
+
+    def accelerate(self):
+        """
+        ボールを少し加速させる
+        """
+        acceleration = 1.05  # 5%加速
+        self.vx *= acceleration
+        self.vy *= acceleration
 
     def update(self):
         """
@@ -147,6 +178,18 @@ class Ball(pg.sprite.Sprite):
             self.vx *= -1
         if not tate:
             self.vy *= -1
+        
+        # 回転処理
+        self.angle += 5  # 回転速度
+        if self.angle >= 360:
+            self.angle = 0
+        
+        # 回転した画像を生成
+        self.image = pg.transform.rotozoom(self.original_image, self.angle, 1.0)
+        old_center = self.rect.center
+        self.rect = self.image.get_rect()
+        self.rect.center = old_center
+        
         self.rect.move_ip(self.vx, self.vy)
 
 
@@ -169,6 +212,33 @@ class Clear:
         screen.blit(self.img, self.rct)
 
 
+class Score:
+    """
+    スコアを管理するクラス
+    """
+
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (255, 255, 255)
+        self.value = 0
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT - 50
+
+    def add_score(self, points):
+        """
+        スコアを加算する
+        """
+        self.value += points
+
+    def update(self, screen: pg.Surface):
+        """
+        スコアを画面に描画する
+        """
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -179,6 +249,7 @@ def main():
     balls = pg.sprite.Group()
     balls.add(Ball())
     clear = Clear()
+    score = Score()
     clock = pg.time.Clock()
     tmr = 0
     is_gameover = False
@@ -188,7 +259,6 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
-<<<<<<< Updated upstream
 
         # 背景の描画
         screen.blit(bg_img, (0, 0))
@@ -202,6 +272,8 @@ def main():
         for ball in balls:
             if blocks.check_collision(ball):
                 ball.vy *= -1
+                bord.accelerate()  # バーも加速
+                score.add_score(10)  # ブロック破壊時にスコア加算
 
         if not is_gameover and not is_clear:
             # ブロックの更新と当たり判定
@@ -221,17 +293,13 @@ def main():
             game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
             screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
 
-=======
-            
-        screen.blit(bg_img, [0, 0])
-        
-        for bomb in pg.sprite.spritecollide(bord, bombs, False):#バーとbombが衝突したとき
-            bomb.vy *= -1 #上に跳ね返す
->>>>>>> Stashed changes
         key_lst = pg.key.get_pressed()
         bord.update(key_lst, screen)
         balls.update()
         balls.draw(screen)
+
+        # スコア表示
+        score.update(screen)
 
         pg.display.update()
         tmr += 1
