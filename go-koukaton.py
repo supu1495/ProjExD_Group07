@@ -211,7 +211,6 @@ class Clear:
         self.img = self.fonto.render(str(self.cle), 0, self.color)
         screen.blit(self.img, self.rct)
 
-
 class Score:
     """
     スコアを管理するクラス
@@ -238,6 +237,20 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+class Lose:
+    """
+    ゲームオーバー画面に関するクラス
+    """
+    def __init__(self):
+        self.bg_img = pg.transform.smoothscale(pg.image.load("fig/bg.jpeg"), (WIDTH, HEIGHT))
+        self.lose_img = pg.image.load("fig/sprGAMEOVER.png")
+        lose_w, lose_h = self.lose_img.get_size()
+        self.lose_x = (WIDTH - lose_w) // 2
+        self.lose_y = (HEIGHT - lose_h) // 2
+
+    def draw(self, screen: pg.Surface):
+        screen.blit(self.bg_img, (0, 0))
+        screen.blit(self.lose_img, (self.lose_x, self.lose_y))
 
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
@@ -252,6 +265,8 @@ def main():
     score = Score()
     clock = pg.time.Clock()
     tmr = 0
+    is_gameover_start = 0
+    lose_screen = None
     is_gameover = False
     is_clear = False
 
@@ -260,43 +275,58 @@ def main():
             if event.type == pg.QUIT:
                 return
 
-        # 背景の描画
-        screen.blit(bg_img, (0, 0))
+        if not is_gameover: 
+            screen.blit(bg_img, [0, 0])
 
-        for bird in pg.sprite.spritecollide(
-            bord, balls, False
-        ):  # バーとbirdが衝突したとき
-            bird.vy *= -1  # 上に跳ね返す
+            # GameOver判定時
+            for ball in balls:
+                if (ball.rect.bottom >= HEIGHT):
+                    is_gameover = True
+                    is_gameover_start = pg.time.get_ticks()
+                    lose_screen = Lose()  # 一度だけ生成
 
-        # ボールとブロックが衝突したとき
-        for ball in balls:
-            if blocks.check_collision(ball):
-                ball.vy *= -1
-                bord.accelerate()  # バーも加速
-                score.add_score(10)  # ブロック破壊時にスコア加算
+            for bird in pg.sprite.spritecollide(
+                bord, balls, False
+            ):  # バーとbirdが衝突したとき
+                bird.vy *= -1  # 上に跳ね返す
 
-        if not is_gameover and not is_clear:
-            # ブロックの更新と当たり判定
-            blocks.update(screen)
-            # if blocks.check_collision():
-            #     score.update(screen, 10)
-            # else:
-            #     score.update(screen)
+            # ボールとブロックが衝突したとき
+            for ball in balls:
+                if blocks.check_collision(ball):
+                    ball.vy *= -1
+                    bord.accelerate()  # バーも加速
+                    score.add_score(10)  # ブロック破壊時にスコア加算
+
+            if not is_gameover and not is_clear:
+                # ブロックの更新と当たり判定
+                blocks.update(screen)
+                # if blocks.check_collision():
+                #     score.update(screen, 10)
+                # else:
+                #     score.update(screen)
 
             # ブロックが全て消えたらクリア
             if len(blocks) == 0:
                 is_clear = True
 
-        # ゲームオーバー時の処理
-        if is_gameover:
-            game_over_font = pg.font.SysFont("hgp創英角ポップ体", 50)
-            game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
-            screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
-
-        key_lst = pg.key.get_pressed()
-        bord.update(key_lst, screen)
-        balls.update()
-        balls.draw(screen)
+            key_lst = pg.key.get_pressed()
+            bord.update(key_lst, screen)
+            balls.update()
+            balls.draw(screen)
+        # GameOver中
+        else:
+            # GameOver画面を3秒間表示し続ける
+            if lose_screen is not None:
+                lose_screen.draw(screen)
+            pg.display.update()
+            # Rキーを押すまで待機
+            for event in pg.event.get():
+                if event.type == pg.KEYDOWN and event.key == pg.K_r:
+                    # is_gameover = False
+                    return
+                if event.type == pg.QUIT:
+                    return
+            clock.tick(50)
 
         # スコア表示
         score.update(screen)
