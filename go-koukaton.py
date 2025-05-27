@@ -178,18 +178,18 @@ class Ball(pg.sprite.Sprite):
             self.vx *= -1
         if not tate:
             self.vy *= -1
-        
+
         # 回転処理
         self.angle += 5  # 回転速度
         if self.angle >= 360:
             self.angle = 0
-        
+
         # 回転した画像を生成
         self.image = pg.transform.rotozoom(self.original_image, self.angle, 1.0)
         old_center = self.rect.center
         self.rect = self.image.get_rect()
         self.rect.center = old_center
-        
+
         self.rect.move_ip(self.vx, self.vy)
 
 
@@ -210,6 +210,7 @@ class Clear:
     def update(self, screen: pg.Surface):
         self.img = self.fonto.render(str(self.cle), 0, self.color)
         screen.blit(self.img, self.rct)
+
 
 class Score:
     """
@@ -237,12 +238,16 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+
 class Lose:
     """
     ゲームオーバー画面に関するクラス
     """
+
     def __init__(self):
-        self.bg_img = pg.transform.smoothscale(pg.image.load("fig/bg.jpeg"), (WIDTH, HEIGHT))
+        self.bg_img = pg.transform.smoothscale(
+            pg.image.load("fig/bg.jpeg"), (WIDTH, HEIGHT)
+        )
         self.lose_img = pg.image.load("fig/sprGAMEOVER.png")
         lose_w, lose_h = self.lose_img.get_size()
         self.lose_x = (WIDTH - lose_w) // 2
@@ -251,6 +256,7 @@ class Lose:
     def draw(self, screen: pg.Surface):
         screen.blit(self.bg_img, (0, 0))
         screen.blit(self.lose_img, (self.lose_x, self.lose_y))
+
 
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
@@ -275,14 +281,13 @@ def main():
             if event.type == pg.QUIT:
                 return
 
-        if not is_gameover: 
+        if not is_gameover:
             screen.blit(bg_img, [0, 0])
 
             # GameOver判定時
             for ball in balls:
-                if (ball.rect.bottom >= HEIGHT):
+                if ball.rect.bottom >= HEIGHT:
                     is_gameover = True
-                    is_gameover_start = pg.time.get_ticks()
                     lose_screen = Lose()  # 一度だけ生成
 
             for bird in pg.sprite.spritecollide(
@@ -322,8 +327,13 @@ def main():
             # Rキーを押すまで待機
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN and event.key == pg.K_r:
-                    # is_gameover = False
-                    return
+                    is_gameover = False
+                    blocks = BlockGroup()  # ブロックを再生成
+                    balls.empty()
+                    balls.add(Ball())
+                    bord = Bord()
+                    score = Score()
+                    is_clear = False
                 if event.type == pg.QUIT:
                     return
             clock.tick(50)
