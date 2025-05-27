@@ -122,24 +122,14 @@ class BlockGroup(pg.sprite.Group):
 
     def check_collision(self, _ball):
         """
-        ボールとブロックの衝突を検出し、衝突したブロック数を返す（円形判定）
+        ボールとブロックの衝突を検出し、衝突したブロック数を返す（矩形判定）
         """
         collision_count = 0
         blocks_to_remove = []
         
         for block in self.sprites():
-            # 円形の当たり判定
-            ball_center = _ball.rect.center
-            block_rect = block.rect
-            
-            # ブロックの最も近い点を計算
-            closest_x = max(block_rect.left, min(ball_center[0], block_rect.right))
-            closest_y = max(block_rect.top, min(ball_center[1], block_rect.bottom))
-            
-            # 距離を計算
-            distance = ((ball_center[0] - closest_x) ** 2 + (ball_center[1] - closest_y) ** 2) ** 0.5
-            
-            if distance <= _ball.radius:
+            # 矩形の当たり判定
+            if _ball.rect.colliderect(block.rect):
                 blocks_to_remove.append(block)
                 collision_count += 1
         
@@ -171,7 +161,6 @@ class Ball(pg.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT - 60)  # バー上を初期位置に
         self.vx, self.vy = +5, +5
         self.angle = 0  # 回転角度
-        self.radius = self.rect.width // 2  # 円形当たり判定用の半径
 
     def accelerate(self):
         """
@@ -305,7 +294,9 @@ def main():
             for bird in pg.sprite.spritecollide(
                 bord, balls, False
             ):  # バーとbirdが衝突したとき
-                bird.vy *= -1  # 上に跳ね返す
+                # ボールをバーの上に押し戻す
+                bird.rect.bottom = bord.rect.top
+                bird.vy = abs(bird.vy) * -1  # 上方向に反転（負の値にする）
 
             # ボールとブロックが衝突したとき
             for ball in balls:
