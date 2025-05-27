@@ -319,7 +319,6 @@ def main():
             # GameOver画面を3秒間表示し続ける
             if lose_screen is not None:
                 lose_screen.draw(screen)
-            pg.display.update()
             # Rキーを押すまで待機
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN and event.key == pg.K_r:
@@ -332,7 +331,6 @@ def main():
                     is_clear = False
                 if event.type == pg.QUIT:
                     return
-            clock.tick(50)
 
         # スコア表示
         score.update(screen)
