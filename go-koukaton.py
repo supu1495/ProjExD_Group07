@@ -188,6 +188,7 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
+<<<<<<< Updated upstream
 
         # 背景の描画
         screen.blit(bg_img, (0, 0))
@@ -220,6 +221,13 @@ def main():
             game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
             screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
 
+=======
+            
+        screen.blit(bg_img, [0, 0])
+        
+        for bomb in pg.sprite.spritecollide(bord, bombs, False):#バーとbombが衝突したとき
+            bomb.vy *= -1 #上に跳ね返す
+>>>>>>> Stashed changes
         key_lst = pg.key.get_pressed()
         bord.update(key_lst, screen)
         balls.update()
