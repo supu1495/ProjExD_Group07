@@ -187,9 +187,14 @@ def main():
 
         # 背景の描画
         screen.blit(bg_img, (0, 0))
-    
-        for bird in pg.sprite.spritecollide(bord, birds, False): # バーとbirdが衝突したとき
+
+        for bird in pg.sprite.spritecollide(bord, balls, False): # バーとbirdが衝突したとき
             bird.vy *= -1 #上に跳ね返す
+
+        # ボールとブロックが衝突したとき
+        for ball in balls:
+            if blocks.check_collision(ball):
+                ball.vy *= -1
 
         if not is_gameover and not is_clear:
             # ブロックの更新と当たり判定
@@ -211,8 +216,8 @@ def main():
 
         key_lst = pg.key.get_pressed()
         bord.update(key_lst, screen)
-        birds.update()
-        birds.draw(screen)
+        balls.update()
+        balls.draw(screen)
 
         pg.display.update()
         tmr += 1
