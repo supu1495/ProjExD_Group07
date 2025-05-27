@@ -122,24 +122,35 @@ class BlockGroup(pg.sprite.Group):
 
     def check_collision(self, _ball):
         """
-        ボールとブロックの衝突を検出する
+        ボールとブロックの衝突を検出し、衝突したブロック数を返す（円形判定）
         """
-        collision_list = pg.sprite.spritecollide(_ball, self, True)
-        if collision_list:
-            # 衝突したブロックを削除 と ボールのはね返し処理
-            return True
-        return False
-
-    def check_collision(self, _ball):
-        """
-        ボールとブロックの衝突を検出し、ボールを加速させる
-        """
-        collision_list = pg.sprite.spritecollide(_ball, self, True)
-        if collision_list:
-            # ボールを少し加速
+        collision_count = 0
+        blocks_to_remove = []
+        
+        for block in self.sprites():
+            # 円形の当たり判定
+            ball_center = _ball.rect.center
+            block_rect = block.rect
+            
+            # ブロックの最も近い点を計算
+            closest_x = max(block_rect.left, min(ball_center[0], block_rect.right))
+            closest_y = max(block_rect.top, min(ball_center[1], block_rect.bottom))
+            
+            # 距離を計算
+            distance = ((ball_center[0] - closest_x) ** 2 + (ball_center[1] - closest_y) ** 2) ** 0.5
+            
+            if distance <= _ball.radius:
+                blocks_to_remove.append(block)
+                collision_count += 1
+        
+        # 衝突したブロックを削除
+        for block in blocks_to_remove:
+            self.remove(block)
+            
+        if collision_count > 0:
             _ball.accelerate()
-            return True
-        return False
+            
+        return collision_count
 
 
 class Ball(pg.sprite.Sprite):
@@ -160,6 +171,7 @@ class Ball(pg.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT - 60)  # バー上を初期位置に
         self.vx, self.vy = +5, +5
         self.angle = 0  # 回転角度
+        self.radius = self.rect.width // 2  # 円形当たり判定用の半径
 
     def accelerate(self):
         """
@@ -297,10 +309,11 @@ def main():
 
             # ボールとブロックが衝突したとき
             for ball in balls:
-                if blocks.check_collision(ball):
+                collision_count = blocks.check_collision(ball)
+                if collision_count > 0:
                     ball.vy *= -1
                     bord.accelerate()  # バーも加速
-                    score.add_score(10)  # ブロック破壊時にスコア加算
+                    score.add_score(10 * collision_count)  # 衝突したブロック数分スコア加算
 
             # ブロックが全て消えたらクリア
             if len(blocks) == 0:
