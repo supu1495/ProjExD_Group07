@@ -1,9 +1,7 @@
 import os
-import random
 import sys
-import time
-import pygame as pg
 
+import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
@@ -20,7 +18,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
         yoko = False
-    if obj_rct.top < 0: #画面下は飛び出る
+    if obj_rct.top < 0:  # 画面下は飛び出る
         tate = False
     return yoko, tate
 
@@ -29,6 +27,7 @@ class Bord(pg.sprite.Sprite):
     """
     ゲームキャラクター（操作バー）に関するクラス
     """
+
     delta = {  # 押下キーと移動量の辞書
         pg.K_LEFT: (-5, 0),
         pg.K_RIGHT: (+5, 0),
@@ -40,13 +39,13 @@ class Bord(pg.sprite.Sprite):
         引数 xy：操作バーの初期位置座標タプル
         """
         super().__init__()
-        self.image = pg.Surface((80, 20)) #操作バーを作成
+        # 画像を用意
+        self.image = pg.Surface((80, 20))  # 操作バーを作成
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, 80, 20))
         self.rect = self.image.get_rect()
         self.dire = (+1, 0)
-        self.rect.center = (WIDTH/2, HEIGHT-30) #中央下に配置
+        self.rect.center = (WIDTH / 2, HEIGHT - 30)  # 中央下に配置
         self.speed = 20
-
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -65,18 +64,78 @@ class Bord(pg.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-class Bird(pg.sprite.Sprite):
+# 個々のブロッククラス
+class Block(pg.sprite.Sprite):
+    """
+    ブロックを表すクラス
+    """
+
+    def __init__(self, x, y, color=(255, 0, 0)):
+        super().__init__()
+        self.image = pg.Surface((80, 30))
+        self.image.fill(color)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+
+    def update(self, screen: pg.Surface):
+        screen.blit(self.image, self.rect)
+
+
+# ブロックのグループを管理するクラス
+class BlockGroup(pg.sprite.Group):
+    """
+    複数のブロックを管理するクラス
+    """
+
+    def __init__(self):
+        super().__init__()
+        # インスタンス化したらブロックを生成
+        self.create_blocks()
+
+    def create_blocks(self):
+        """
+        ブロックを生成する
+        """
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
+        for y in range(6):  # 5行
+            for x in range(13):
+                color = colors[y % len(colors)]
+                block = Block(x * 85, y * 35 + 50, color)
+                self.add(block)
+
+    def update(self, screen: pg.Surface):
+        """
+        全てのブロックを更新する
+        """
+        for block in self.sprites():
+            block.update(screen)
+
+    def check_collision(self, _ball):
+        """
+        ボールとブロックの衝突を検出する
+        """
+        collision_list = pg.sprite.spritecollide(_ball, self, True)
+        if collision_list:
+            # 衝突したブロックを削除 と ボールのはね返し処理
+            return True
+        return False
+
+
+class Ball(pg.sprite.Sprite):
     """
     こうかとんボールに関するクラス
     """
+
     def __init__(self):
         """
         こうかとんSurfaceを生成する
         """
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("fig/ball.png"), 0, 0.9) #画像呼び出し
+        self.image = pg.transform.rotozoom(
+            pg.image.load("fig/ball.png"), 0, 0.9
+        )  # 画像呼び出し
         self.rect = self.image.get_rect()
-        self.rect.center = (WIDTH/2, HEIGHT-60) #バー上を初期位置に
+        self.rect.center = (WIDTH / 2, HEIGHT - 60)  # バー上を初期位置に
         self.vx, self.vy = +5, +5
 
     def update(self):
@@ -91,87 +150,81 @@ class Bird(pg.sprite.Sprite):
         self.rect.move_ip(self.vx, self.vy)
 
 
-# class Score:
-#     """
-#     スコアについてのクラス
-#     """
-#     def __init__(self):
-#         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
-#         self.color = (0, 0, 255)
-#         self.score = 0
-#         self.image = self.fonto.render(str(self.score), 0, self.color)
-#         self.rect = self.image.get_rect()
-#         self.rect.center = (100, HEIGHT-50)       
-#     def update(self):
-#         """
-#         現在のスコアを描画するメソッド
-#         """
-#         self.image = self.fonto.render(str(self.score), 0, self.color)
-
-# class Explosin(pg.sprite.Sprite):
-#     """
-#     爆発エフェクトの為のクラス
-#     """
-#     def __init__(self, obj:"Bird", life: int):
-#         super().__init__()
-#         img = pg.image.load(f"fig/explosion.gif")
-#         self.imgs = [img, pg.transform.flip(img, 1, 1)]
-#         self.image = self.imgs[0]
-#         self.rect = self.image.get_rect(center=obj.rect.center)
-#         self.life = life
-
-#     def update(self):
-#         """
-#         爆発経過時間のメソッド
-#         """
-#         self.life -= 1
-#         self.image = self.imgs[self.life // 10 % 2]
-#         if self.life < 0:
-#             self.kill()
-
-#他の人用の未完成機能
-
-
-
-class clear:
+class Clear:
     """
     ブロックを全て壊した時のエフェクト
     """
+
     def __init__(self):
         self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
         self.color = (0, 0, 255)
-        self.cle = ("ブロック崩しクリアめでとう!")
+        self.cle = "ブロック崩しクリアめでとう!"
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
         self.image.set_alpha(128)
+
     def update(self, screen: pg.Surface):
         self.img = self.fonto.render(str(self.cle), 0, self.color)
         screen.blit(self.img, self.rct)
 
+
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
-    screen = pg.display.set_mode((WIDTH, HEIGHT))    
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg")
+
     bord = Bord()
-    birds = pg.sprite.Group()
-    birds.add(Bird())
+    blocks = BlockGroup()
+    balls = pg.sprite.Group()
+    balls.add(Ball())
+    clear = Clear()
     clock = pg.time.Clock()
     tmr = 0
-    # score = Score()
+    is_gameover = False
+    is_clear = False
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
 
-        screen.blit(bg_img, [0, 0])
-        for bird in pg.sprite.spritecollide(bord, birds, False):#バーとbirdが衝突したとき
-            bird.vy *= -1 #上に跳ね返す
+        # 背景の描画
+        screen.blit(bg_img, (0, 0))
+
+        for bird in pg.sprite.spritecollide(
+            bord, balls, False
+        ):  # バーとbirdが衝突したとき
+            bird.vy *= -1  # 上に跳ね返す
+
+        # ボールとブロックが衝突したとき
+        for ball in balls:
+            if blocks.check_collision(ball):
+                ball.vy *= -1
+
+        if not is_gameover and not is_clear:
+            # ブロックの更新と当たり判定
+            blocks.update(screen)
+            # if blocks.check_collision():
+            #     score.update(screen, 10)
+            # else:
+            #     score.update(screen)
+
+            # ブロックが全て消えたらクリア
+            if len(blocks) == 0:
+                is_clear = True
+
+        # ゲームオーバー時の処理
+        if is_gameover:
+            game_over_font = pg.font.SysFont("hgp創英角ポップ体", 50)
+            game_over_text = game_over_font.render("ゲームオーバー", True, (255, 0, 0))
+            screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+
         key_lst = pg.key.get_pressed()
         bord.update(key_lst, screen)
-        birds.update()
-        birds.draw(screen)
-        # score.update()
+        balls.update()
+        balls.draw(screen)
+
         pg.display.update()
         tmr += 1
         clock.tick(50)
