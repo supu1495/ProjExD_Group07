@@ -1,6 +1,5 @@
 import os
 import sys
-
 import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
@@ -79,10 +78,13 @@ class Block(pg.sprite.Sprite):
     """
     ブロックを表すクラス
     """
-
-    def __init__(self, x, y, color=(255, 0, 0)):
+    def __init__(self, x: int, y: int, color: tuple[int, int, int]=(255, 0, 0)):
+        """
+        引数1,2 配置座標
+        引数3 色
+        """
         super().__init__()
-        self.image = pg.Surface((80, 30))
+        self.image = pg.Surface((80, 30)) # 大きさ
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
@@ -107,8 +109,8 @@ class BlockGroup(pg.sprite.Group):
         ブロックを生成する
         """
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
-        for y in range(6):  # 5行
-            for x in range(13):
+        for y in range(6):  # 行
+            for x in range(13): # 列
                 color = colors[y % len(colors)]
                 block = Block(x * 85, y * 35 + 50, color)
                 self.add(block)
@@ -120,7 +122,7 @@ class BlockGroup(pg.sprite.Group):
         for block in self.sprites():
             block.update(screen)
 
-    def check_collision(self, _ball):
+    def check_collision(self, _ball: "Ball") -> bool:
         """
         ボールとブロックの衝突を検出し、衝突したブロック数を返す（矩形判定）
         """
@@ -202,7 +204,7 @@ class Clear:
     def __init__(self):
         self.fonto = pg.font.SysFont("bizudgothic", 30)
         self.color = (0, 0, 255)
-        self.cle = "よくぞ、全てのブロックを崩せた！クリア本当におめでとう！！"
+        self.cle = "よくぞ、全てのブロックを崩せた！クリア本当におめでとう！！" # 表示テキスト
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
@@ -221,12 +223,12 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (255, 255, 255)
-        self.value = 0
+        self.value = 0 # 初期スコア
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT - 50
 
-    def add_score(self, points):
+    def add_score(self, points: int):
         """
         スコアを加算する
         """
@@ -272,7 +274,6 @@ def main():
     score = Score()
     clock = pg.time.Clock()
     tmr = 0
-    is_gameover_start = 0
     lose_screen = None
     is_gameover = False
     is_clear = False
