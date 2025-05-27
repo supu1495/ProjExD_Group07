@@ -133,6 +133,22 @@ class Bird(pg.sprite.Sprite):
 
 
 
+class clear:
+    """
+    ブロックを全て壊した時のエフェクト
+    """
+    def __init__(self):
+        self.fonto = pg.font.SysFont("hgp創英角ポップ体", 30)
+        self.color = (0, 0, 255)
+        self.cle = ("ブロック崩しクリアめでとう!")
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.image.set_alpha(128)
+    def update(self, screen: pg.Surface):
+        self.img = self.fonto.render(str(self.cle), 0, self.color)
+        screen.blit(self.img, self.rct)
+
 def main():
     pg.display.set_caption("壁にレッツゴーこうかとん！")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
