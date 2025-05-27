@@ -124,24 +124,25 @@ class BlockGroup(pg.sprite.Group):
 
     def check_collision(self, _ball: "Ball") -> bool:
         """
-        ボールとブロックの衝突を検出する
+        ボールとブロックの衝突を検出し、衝突したブロック数を返す（矩形判定）
         """
-        collision_list = pg.sprite.spritecollide(_ball, self, True)
-        if collision_list:
-            # 衝突したブロックを削除 と ボールのはね返し処理
-            return True
-        return False
-
-    def check_collision(self, _ball):
-        """
-        ボールとブロックの衝突を検出し、ボールを加速させる
-        """
-        collision_list = pg.sprite.spritecollide(_ball, self, True)
-        if collision_list:
-            # ボールを少し加速
+        collision_count = 0
+        blocks_to_remove = []
+        
+        for block in self.sprites():
+            # 矩形の当たり判定
+            if _ball.rect.colliderect(block.rect):
+                blocks_to_remove.append(block)
+                collision_count += 1
+        
+        # 衝突したブロックを削除
+        for block in blocks_to_remove:
+            self.remove(block)
+            
+        if collision_count > 0:
             _ball.accelerate()
-            return True
-        return False
+            
+        return collision_count
 
 
 class Ball(pg.sprite.Sprite):
@@ -203,7 +204,7 @@ class Clear:
     def __init__(self):
         self.fonto = pg.font.SysFont("bizudgothic", 30)
         self.color = (0, 0, 255)
-        self.cle = "ブロック崩しクリアおめでとう!" # 表示テキスト
+        self.cle = "よくぞ、全てのブロックを崩せた！クリア本当におめでとう！！" # 表示テキスト
         self.image = pg.Surface((WIDTH, HEIGHT))
         pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
@@ -294,14 +295,17 @@ def main():
             for bird in pg.sprite.spritecollide(
                 bord, balls, False
             ):  # バーとbirdが衝突したとき
-                bird.vy *= -1  # 上に跳ね返す
+                # ボールをバーの上に押し戻す
+                bird.rect.bottom = bord.rect.top
+                bird.vy = abs(bird.vy) * -1  # 上方向に反転（負の値にする）
 
             # ボールとブロックが衝突したとき
             for ball in balls:
-                if blocks.check_collision(ball):
+                collision_count = blocks.check_collision(ball)
+                if collision_count > 0:
                     ball.vy *= -1
                     bord.accelerate()  # バーも加速
-                    score.add_score(10)  # ブロック破壊時にスコア加算
+                    score.add_score(10 * collision_count)  # 衝突したブロック数分スコア加算
 
             # ブロックが全て消えたらクリア
             if len(blocks) == 0:
